@@ -45,6 +45,7 @@
     "steem": "^0.7.2",
     "steemconnect": "^2.0.1",
     "url-search-params-polyfill": "^5.0.0",
+    "web3": "^1.0.0-beta.36",
     "xmldom": "^0.1.27"
   },
   "scripts": {

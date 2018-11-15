@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { Helmet } from 'react-helmet';
 import isEmpty from 'lodash/isEmpty';
 import { keccak256 } from 'js-sha3';
-import { List, Avatar, Button, Tooltip, Modal, Icon, Input, InputNumber, Tabs } from 'antd';
+import { List, Avatar, Button, Tooltip, Modal, Icon, Input, InputNumber, Tabs, notification } from 'antd';
 import { formatNumber } from "utils/helpers/steemitHelpers";
 import {
   selectBalance,
@@ -22,6 +22,7 @@ import CircularProgress from 'components/CircularProgress';
 import { selectMe } from 'features/User/selectors';
 import { shortFormat } from 'utils/date';
 import tokenPlaceholder from 'assets/images/wallet/token-placeholder@2x.png';
+import web3 from 'web3.js';
 
 class Wallet extends Component {
   static propTypes = {
@@ -37,7 +38,7 @@ class Wallet extends Component {
   };
 
   state = {
-    withdrawStepVisible: false,
+    withdrawStepVisible: true,
     ethAddress: null,
     ethModalVisible: false,
     withdrawalAmount: 1000.00,
@@ -53,12 +54,41 @@ class Wallet extends Component {
 
   componentDidMount() {
     this.props.getTransactions();
+    this.validEthereumNetwork()
   }
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.ethAddress !== null) {
       this.setState({ ethModalVisible: false });
     }
+  }
+
+  validEthereumNetwork() {
+    // TODO => Fix phrases to mainnet after lauching.
+    if (!(typeof window !== 'undefined' && typeof window.web3 !== 'undefined')) {
+      notification['error']({ message: "Metamask is not installed. Please install first." });
+      return false;
+    } else {
+      web3.eth.net.getNetworkType()
+        .then((network) => {
+          if (network !== 'ropsten') {
+            notification['error']({ message: `You are currently in ${network} network. Please change your network to Ropsten network.` });
+            return false;
+          }
+        });
+    }
+    return true;
+  }
+
+  requestSignTransaction = async () => {
+    if (!this.validEthereumNetwork()) {
+      return false;
+    }
+    const message = `Register this Ethereum address to your steemhunt account, ${this.props.me}. (Timestamp: ${new Date().getTime()})`;
+    const accounts = await web3.eth.getAccounts();
+    const signature = await web3.eth.personal.sign(message, accounts[0]);
+    console.log(signature);
+    this.props.setEthAddress(accounts[0], message, signature);
   }
 
   isValidAddress(address) {
@@ -76,9 +106,9 @@ class Wallet extends Component {
 
   isValidChecksumAddress(address) {
     // Check each case
-    address = address.replace('0x','');
+    address = address.replace('0x', '');
     var addressHash = keccak256(address.toLowerCase());
-    for (var i = 0; i < 40; i++ ) {
+    for (var i = 0; i < 40; i++) {
       // the nth letter should be uppercase if the nth digit of casemap is 1
       if ((parseInt(addressHash[i], 16) > 7 && address[i].toUpperCase() !== address[i]) || (parseInt(addressHash[i], 16) <= 7 && address[i].toLowerCase() !== address[i])) {
         return false;
@@ -87,7 +117,7 @@ class Wallet extends Component {
     return true;
   }
 
-  handleEthAddressChanged = (e) => this.setState({ ethAddress: e.target.value });
+  // handleEthAddressChanged = (e) => this.setState({ ethAddress: e.target.value });
   handleWithdrawalAmountChanged = (amount) => this.setState({ withdrawalAmount: amount });
   handleWithdraw = () => {
     this.props.withdraw(this.state.withdrawalAmount);
@@ -139,57 +169,26 @@ class Wallet extends Component {
             </Tooltip>
           </div>
         </div>
-        <div className="warning left-padded right-padded">
-          <span className="pink">Warning!</span>
-          &nbsp;Your airdropped HUNT tokens will be cancelled if you are listed on our blacklist.
-          &nbsp;<Icon type="question-circle-o" className="help-hunt-score fake-link" onClick={this.toggleModal} />
-          <Modal
-            title="Airdrops will be removed from Blacklisted users"
-            visible={this.state.modalVisible}
-            onOk={this.toggleModal}
-            onCancel={this.toggleModal}
-            footer={null}
-            bodyStyle={{
-              overflow: 'scroll',
-              maxHeight: '50vh',
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            <p>Your airdropped HUNT tokens will be revoked if you are listed on our <a href="https://github.com/Steemhunt/whitelist/blob/master/steemhunt/blacklist.json" target="_blank" rel="noopener noreferrer">permanent blacklist</a> for abusing the system (this does not apply to those on the 30-day blacklist).</p>
-            <p>HUNT token airdrops are designed for hunters/sponsors who contribute by increasing the value of HUNT platform. To maintain this core value, Steemhunt DOES NOT allow single users to run alt accounts to abuse our system.</p>
-
-            <p>We blacklist users if the user attempts any of the following actions:</p>
-            <ol>
-              <li>Operates multiple alternative accounts to take an advantage for HUNT token airdrops</li>
-              <li>Creates spam posts or comments</li>
-              <li>Plagiarises</li>
-            </ol>
-            <p>
-              If your name is listed in the <a href="https://github.com/Steemhunt/whitelist/blob/master/steemhunt/blacklist.json" target="_blank" rel="noopener noreferrer">permanent blacklist</a>, your reserved HUNT tokens will be cancelled.<br/>
-              You can appeal if you think that you&apos;re on the blacklist by a mistake, please leave a message on <a href="https://discord.gg/BSArSDc" target="_blank" rel="noopener noreferrer">#blacklist-appeal</a> channel for review before November 9th 2018.
-            </p>
-          </Modal>
-        </div>
 
         {this.state.withdrawStepVisible &&
           <div>
             {ethAddress === null ?
               <div className="eth-bar left-padded right-padded">
                 <div className="sans small">Link Your Ethereum Wallet</div>
-                <Input
+                {/* <Input
                   placeholder="Your wallet address (e.g. 0xABCD1234...)"
                   onChange={this.handleEthAddressChanged}
                   className="input"
-                />
+                /> */}
+                <p>{this.state.ethAddress}</p>
                 <Button
                   type="primary"
                   className="submit-button right"
-                  onClick={this.linkEthAddress}
-                  ghost
+                  onClick={this.requestSignTransaction}
                 >
                   LINK
                 </Button>
-                <Modal
+                {/* <Modal
                   closable={false}
                   visible={this.state.ethModalVisible}
                   onCancel={this.handleEthModalCancel}
@@ -207,9 +206,9 @@ class Wallet extends Component {
                     Do not request HUNT directly to exchange addresses. This will result in lost tokens that won't be refunded.
                     Once you link your ETH address, <b>you cannot change it later</b>. Please double check that you have entered it correctly.
                   </div>
-                </Modal>
+                </Modal> */}
               </div>
-            :
+              :
               <div className="withdraw-bar left-padded right-padded">
                 <div className="sans small">Your Ethereum Address</div>
                 <div className="sans balance eth-address">{ethAddress}</div>
@@ -251,6 +250,37 @@ class Wallet extends Component {
             }
           </div>
         }
+        <div className="warning left-padded right-padded">
+          <span className="pink">Warning!</span>
+          &nbsp;Your airdropped HUNT tokens will be cancelled if you are listed on our blacklist.
+          &nbsp;<Icon type="question-circle-o" className="help-hunt-score fake-link" onClick={this.toggleModal} />
+          <Modal
+            title="Airdrops will be removed from Blacklisted users"
+            visible={this.state.modalVisible}
+            onOk={this.toggleModal}
+            onCancel={this.toggleModal}
+            footer={null}
+            bodyStyle={{
+              overflow: 'scroll',
+              maxHeight: '50vh',
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            <p>Your airdropped HUNT tokens will be revoked if you are listed on our <a href="https://github.com/Steemhunt/whitelist/blob/master/steemhunt/blacklist.json" target="_blank" rel="noopener noreferrer">permanent blacklist</a> for abusing the system (this does not apply to those on the 30-day blacklist).</p>
+            <p>HUNT token airdrops are designed for hunters/sponsors who contribute by increasing the value of HUNT platform. To maintain this core value, Steemhunt DOES NOT allow single users to run alt accounts to abuse our system.</p>
+
+            <p>We blacklist users if the user attempts any of the following actions:</p>
+            <ol>
+              <li>Operates multiple alternative accounts to take an advantage for HUNT token airdrops</li>
+              <li>Creates spam posts or comments</li>
+              <li>Plagiarises</li>
+            </ol>
+            <p>
+              If your name is listed in the <a href="https://github.com/Steemhunt/whitelist/blob/master/steemhunt/blacklist.json" target="_blank" rel="noopener noreferrer">permanent blacklist</a>, your reserved HUNT tokens will be cancelled.<br />
+              You can appeal if you think that you&apos;re on the blacklist by a mistake, please leave a message on <a href="https://discord.gg/BSArSDc" target="_blank" rel="noopener noreferrer">#blacklist-appeal</a> channel for review before November 9th 2018.
+            </p>
+          </Modal>
+        </div>
 
         <Tabs activeKey={this.state.activeTabKey} onTabClick={(key) => this.setState({ activeTabKey: key })}>
           <Tabs.TabPane tab="Airdrop" key="1">
@@ -259,7 +289,7 @@ class Wallet extends Component {
                 <img src={tokenPlaceholder} alt="No transactions" />
                 <p>No Transactions Yet</p>
               </div>
-            :
+              :
               <List
                 itemLayout="horizontal"
                 dataSource={transactions}
@@ -268,15 +298,15 @@ class Wallet extends Component {
                   <List.Item className="left-padded transaction-item">
                     <List.Item.Meta
                       avatar={me === t.sender ?
-                        <Avatar icon="arrow-right" className="icon sent"/>
-                      :
+                        <Avatar icon="arrow-right" className="icon sent" />
+                        :
                         <Avatar icon="arrow-left" className="icon received" />
                       }
                       title={me === t.sender ?
                         <div className="title sent">
                           {`Sent ${formatNumber(t.amount)} to ` + (t.receiver ? `@${t.receiver}` : `ETH Wallet (${t.eth_address})`)}
                         </div>
-                      :
+                        :
                         <div className="title received">
                           {`Received ${formatNumber(t.amount)} from ` + (t.sender ? `@${t.sender}` : `ETH Wallet (${t.eth_address})`)}
                         </div>
@@ -299,7 +329,7 @@ class Wallet extends Component {
                 <img src={tokenPlaceholder} alt="No transactions" />
                 <p>No Withdrawals Yet</p>
               </div>
-            :
+              :
               <List
                 itemLayout="horizontal"
                 dataSource={withdrawals}
@@ -308,13 +338,13 @@ class Wallet extends Component {
                   <List.Item className="left-padded transaction-item">
                     <List.Item.Meta
                       avatar={w.status === 'sent' ?
-                          <Avatar icon="arrow-right" className="icon sent"/>
+                        <Avatar icon="arrow-right" className="icon sent" />
                         :
-                          (w.status === 'error' ?
-                            <Avatar icon="exclamation" className="icon error"/>
+                        (w.status === 'error' ?
+                          <Avatar icon="exclamation" className="icon error" />
                           :
-                            <Avatar icon="loading" className="icon pending"/>
-                          )
+                          <Avatar icon="loading" className="icon pending" />
+                        )
                       }
                       title={
                         <div className="title sent">
@@ -356,7 +386,7 @@ const mapStateToProps = (state, props) => createStructuredSelector({
 
 const mapDispatchToProps = (dispatch, props) => ({
   getTransactions: () => dispatch(getTransactionsBegin()),
-  setEthAddress: (address) => dispatch(setEthAddressBegin(address)),
+  setEthAddress: (address, message, signature) => dispatch(setEthAddressBegin(address, message, signature)),
   withdraw: (amount) => dispatch(withdrawBegin(amount)),
 });
 
