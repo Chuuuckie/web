@@ -35,6 +35,7 @@ export function withdrawReducer(state, action) {
       return update(state, {
         isLoading: { $set: false },
         balance: { $set: result.balance },
+        externalBalance: { $set: result.external_balance },
         withdrawals: { $unshift: [result.withdrawal] }, // put on top
       });
     case WITHDRAW_FAILURE:

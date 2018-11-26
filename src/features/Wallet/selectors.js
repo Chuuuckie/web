@@ -7,6 +7,11 @@ export const selectBalance = () => createSelector(
   state => state.balance,
 );
 
+export const selectExternalBalance = () => createSelector(
+  selectWalletDomain(),
+  state => state.externalBalance,
+);
+
 export const selectEthAddress = () => createSelector(
   selectWalletDomain(),
   state => state.ethAddress,

@@ -5,6 +5,7 @@ import withdraw, { withdrawReducer } from './actions/withdraw';
 
 export const initialState = {
   balance: '',
+  externalBalance: '',
   totalClaimed: 0.0,
   ethAddress: null,
   transactions: [],
