@@ -21,17 +21,23 @@
       .token-bar {
         width: 75%;
         background: pink;
+        position: relative;
         @include responsive(tablet) {
           width: 100%;
           height: 30px;
           margin-top: 0.5rem;
         }
-        span {
+        span.token-bar-white {
           display: block;
           height: 100%;
           background: white;
-          color: black;
+        }
+        span.token-amount {
+          position: absolute;
+          top: 0;
+          color: #161616;
           display: flex;
+          height: 100%;
           justify-content: flex-start;
           align-items: center;
           padding-left: 10px;
@@ -62,7 +68,7 @@
 
     button {
       color: white;
-      background: black;
+      background: #161616;
       border-radius: 0px;
       font-weight: 200;
       margin-left: 0.5rem;
@@ -227,7 +233,7 @@
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      margin: 50px 0px;
+      margin: 15px 0px;
       img {
         margin: 20px 0px;
         width: 80px;

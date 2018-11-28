@@ -128,7 +128,7 @@ class Wallet extends Component {
       ),
       okText: "Connect to Metamask",
       onOk: async () => {
-        const message = `Register this Ethereum address to your steemhunt account, ${this.props.me}. (Timestamp: ${new Date().getTime()})`;
+        const message = `Register this Ethereum address to your Steemhunt account, ${this.props.me}. (Timestamp: ${new Date().getTime()})`;
         const signature = await this.web3.eth.personal.sign(message, this.eth_accounts[0]);
         this.props.setEthAddress(this.eth_accounts[0], message, signature);
       }
@@ -157,12 +157,15 @@ class Wallet extends Component {
         <div className="balance-bar left-padded right-padded">
           <div className="balance-row">
             <div className="sans small">Total HUNT Token Balance</div>
-            <div className="sans balance">{formatNumber(balance)} HUNT</div>
+            <div className="sans balance">{formatNumber(totalHuntBalance)} HUNT</div>
           </div>
           <div className="balance-row">
             <div className="sans small">Steemhunt Wallet</div>
             <div className="token-bar-container">
-              <div className="token-bar"><span style={{ width: `${balance / totalHuntBalance * 100}%` }}>{`${formatNumber(balance)} (${formatNumber(balance / totalHuntBalance * 100)}%)`}</span></div>
+              <div className="token-bar">
+                <span className="token-bar-white" style={{ width: `${balance / totalHuntBalance * 100}%` }}></span>
+                <span className="token-amount">{`${formatNumber(balance)} (${formatNumber(balance / totalHuntBalance * 100)}%)`}</span>
+              </div>
               <div className="token-button">
                 <Button
                   type="primary"
@@ -177,7 +180,10 @@ class Wallet extends Component {
           <div className="balance-row">
             <div className="sans small">External Wallet - {ethAddress}</div>
             <div className="token-bar-container">
-              <div className="token-bar"><span style={{ width: `${externalBalance / totalHuntBalance * 100}%` }}>{`${formatNumber(externalBalance)} (${formatNumber(externalBalance / totalHuntBalance * 100)}%)`}</span></div>
+              <div className="token-bar">
+                <span className="token-bar-white" style={{ width: `${externalBalance / totalHuntBalance * 100}%` }}></span>
+                <span className="token-amount">{`${formatNumber(externalBalance)} (${formatNumber(externalBalance / totalHuntBalance * 100)}%)`}</span>
+              </div>
               <div className="token-button">
                 <Button
                   type="primary"

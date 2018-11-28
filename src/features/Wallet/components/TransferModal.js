@@ -21,7 +21,7 @@ export default class TransferModal extends Component {
       return false;
     }
     let msg;
-    if (amount >= parseFloat(this.props.walletProps.balance)) {
+    if (amount > parseFloat(this.props.walletProps.balance)) {
       msg = "You typed more tokens than your balance.";
     } else if (amount < 2000) {
       msg = "You have to transfer at leat 2,000 HUNT.";
